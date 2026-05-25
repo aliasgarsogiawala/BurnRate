@@ -13,49 +13,49 @@ interface UsageTableProps {
 }
 
 export default function UsageTable({ 
-  title = 'Recent usage',
+  title = 'Recent Usage',
   data 
 }: UsageTableProps) {
   const mockData: UsageLog[] = data || [
     {
       id: '1',
-      time: '2:15 PM',
+      time: 'May 31, 10:21 AM',
       app: 'Cursor',
-      model: 'GPT-4 Turbo',
-      tokens: 15234,
-      cost: 0.45,
+      model: 'GPT-4o',
+      tokens: 12400,
+      cost: 0.34,
     },
     {
       id: '2',
-      time: '1:45 PM',
-      app: 'VS Code',
-      model: 'Claude 3.5',
-      tokens: 8901,
-      cost: 0.32,
+      time: 'May 31, 09:15 AM',
+      app: 'VS Code Ext.',
+      model: 'Claude 3.5 Sonnet',
+      tokens: 8700,
+      cost: 0.28,
     },
     {
       id: '3',
-      time: '1:12 PM',
+      time: 'May 30, 11:47 PM',
       app: 'Cline',
-      model: 'GPT-4 Vision',
-      tokens: 22145,
-      cost: 0.78,
+      model: 'GPT-4o',
+      tokens: 15200,
+      cost: 0.41,
     },
     {
       id: '4',
-      time: '12:34 PM',
-      app: 'Custom App',
-      model: 'GPT-3.5',
-      tokens: 5678,
-      cost: 0.08,
+      time: 'May 30, 08:33 PM',
+      app: 'BurnRate Chat',
+      model: 'Gemini 1.5 Pro',
+      tokens: 9100,
+      cost: 0.23,
     },
     {
       id: '5',
-      time: '11:22 AM',
-      app: 'Chat',
-      model: 'Claude 3 Opus',
-      tokens: 18234,
-      cost: 0.62,
+      time: 'May 30, 06:12 PM',
+      app: 'Cursor',
+      model: 'GPT-4 Turbo',
+      tokens: 21300,
+      cost: 0.63,
     },
   ];
 
@@ -97,6 +97,13 @@ export default function UsageTable({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Footer */}
+      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <button className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+          View all usage →
+        </button>
       </div>
     </div>
   );

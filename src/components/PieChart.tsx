@@ -1,6 +1,6 @@
 interface PieChartProps {
   title: string;
-  items: Array<{ label: string; value: number; color: string }>;
+  items: Array<{ label: string; value: number; cost: number; color: string }>;
   showLegend?: boolean;
 }
 
@@ -71,18 +71,24 @@ export default function PieChart({ title, items, showLegend = true }: PieChartPr
         {/* Legend */}
         {showLegend && (
           <div className="space-y-3 flex-1">
-            {slices.map((slice, idx) => (
-              <div key={idx} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: slice.color }}
-                  ></div>
-                  <span className="text-sm text-gray-600">{slice.label}</span>
+            {slices.map((slice, idx) => {
+              const item = items[idx];
+              return (
+                <div key={idx} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: slice.color }}
+                    ></div>
+                    <span className="text-sm text-gray-600">{slice.label}</span>
+                  </div>
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <span className="text-sm font-medium text-gray-900">${item.cost.toFixed(2)}</span>
+                    <span className="text-sm font-medium text-gray-600 w-8 text-right">{slice.percentage}%</span>
+                  </div>
                 </div>
-                <span className="text-sm font-medium text-gray-900">{slice.percentage}%</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
