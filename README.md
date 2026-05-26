@@ -1,36 +1,281 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BurnRate AI
 
-## Getting Started
+Track how much AI you're actually burning across coding tools, chat apps, and APIs.
 
-First, run the development server:
+BurnRate AI is a developer-first AI usage analytics platform that helps you monitor token consumption, API spend, and estimated AI value across tools like GitHub Copilot, Cursor, OpenAI Codex, Cline, custom apps, and OpenAI-compatible clients.
+
+---
+
+## Why BurnRate?
+
+Modern AI tools hide usage behind subscriptions.
+
+You pay:
+
+- $10/month for Copilot
+- $20/month for ChatGPT
+- $X for API credits
+
+…but how much AI value are you *actually consuming*?
+
+BurnRate helps answer:
+
+- How many tokens did I burn today?
+- Which model is costing me the most?
+- Which tool uses the most AI?
+- How much AI value did I get relative to what I paid?
+
+Example:
+
+```txt
+Paid: $10
+Used: $184.27 worth of AI
+Value received: 18.4x
+```
+
+---
+
+# Core Features
+
+### Usage Dashboard
+
+Track:
+
+- Total AI spend
+- Total token usage
+- Requests per day
+- Usage by model
+- Usage by tool
+- Average cost per request
+
+---
+
+### Multi-source Usage Tracking
+
+Supports:
+
+- GitHub Copilot
+- OpenAI / Codex
+- Cursor
+- Cline
+- OpenAI-compatible clients
+- Manual usage imports
+- BurnRate Proxy (live tracking)
+
+---
+
+### OpenAI-Compatible Proxy
+
+BurnRate can act as a local proxy between your tools and AI providers:
+
+```txt
+Your Tool → BurnRate Proxy → AI Provider
+```
+
+This enables:
+
+- real-time token tracking
+- request logging
+- cost calculation
+- latency tracking
+- per-app analytics
+
+---
+
+### Import External Usage
+
+Import usage from tools not routed through BurnRate:
+
+- GitHub Copilot AI Credits
+- OpenAI Usage Dashboard
+- Codex Usage
+- Manual entries
+
+---
+
+### Budget Monitoring
+
+Set alerts for:
+
+- daily usage
+- monthly spend
+- token thresholds
+
+---
+
+# System Architecture
+
+## High-Level Architecture
+
+```mermaid
+flowchart LR
+  A[Cursor / Copilot / Codex / Chat Apps] --> B[BurnRate Proxy]
+
+  B --> C[OpenAI]
+  B --> D[Anthropic]
+  B --> E[Gemini]
+  B --> F[OpenRouter]
+
+  B --> G[(PostgreSQL Database)]
+
+  G --> H[BurnRate Dashboard]
+```
+
+---
+
+# Request Flow
+
+```mermaid
+sequenceDiagram
+  participant Tool as AI Tool
+  participant Proxy as BurnRate Proxy
+  participant Provider as AI Provider
+  participant DB as PostgreSQL
+
+  Tool->>Proxy: Send AI Request
+  Proxy->>Provider: Forward request
+  Provider-->>Proxy: Response + token usage
+  Proxy->>Proxy: Calculate cost
+  Proxy->>DB: Store usage log
+  Proxy-->>Tool: Return response
+```
+
+---
+
+# Database Architecture
+
+```mermaid
+erDiagram
+
+  USER ||--o{ USAGE_LOG : has
+  USER ||--o{ USAGE_SOURCE : owns
+
+  USAGE_SOURCE ||--o{ USAGE_LOG : creates
+
+  USER {
+    string id
+    string email
+    string plan
+  }
+
+  USAGE_SOURCE {
+    string id
+    string name
+    string type
+    datetime createdAt
+  }
+
+  USAGE_LOG {
+    string id
+    string sourceId
+    string provider
+    string model
+    int inputTokens
+    int outputTokens
+    float costUsd
+    datetime createdAt
+  }
+```
+
+---
+
+# Tech Stack
+
+## Frontend
+
+- Next.js 15
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+
+## Backend
+
+- Next.js API Routes
+- Hono Proxy Server
+
+## Database
+
+- PostgreSQL
+- Prisma ORM
+
+## AI Providers
+
+- OpenAI
+- Anthropic
+- Gemini
+- OpenRouter
+
+---
+
+# Current Progress
+
+## Completed
+
+- Project setup
+- Dashboard UI
+- Import Usage page
+- System architecture planning
+- Database schema design
+
+## In Progress
+
+- Prisma setup
+- Usage logging
+- BurnRate Proxy
+
+## Planned
+
+- Live OpenAI-compatible proxy
+- GitHub Copilot usage import
+- OpenAI usage import
+- Budget alerts
+- API key management
+- Team/project analytics
+
+---
+
+# Local Development
+
+## Install dependencies
+
+```bash
+npm install
+```
+
+---
+
+## Start Next.js app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Run proxy server
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run proxy
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+# Vision
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+BurnRate aims to become the single dashboard for understanding your AI usage across every tool you use.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+One place to answer:
 
-## Deploy on Vercel
+> “How much AI did I really burn this month?”
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Screenshots
+
+_Add screenshots here as development progresses._
+
+---
+
+# Author
+
+Built by Aliasgar Sogiawala
