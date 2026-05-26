@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ImportCard from '@/components/ImportCard';
 
 interface ImportedUsage {
@@ -14,91 +14,136 @@ interface ImportedUsage {
 }
 
 export default function ImportPage() {
-  const [imports, setImports] = useState<ImportedUsage[]>([
-    {
-      id: '1',
-      date: 'May 25, 2025 2:34 PM',
-      source: 'GitHub Copilot',
-      provider: 'GitHub',
-      usage: '142.5 credits',
-      cost: '$42.80',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      date: 'May 24, 2025 10:12 AM',
-      source: 'OpenAI API',
-      provider: 'OpenAI',
-      usage: '287.4K tokens',
-      cost: '$12.43',
-      status: 'completed',
-    },
-    {
-      id: '3',
-      date: 'May 23, 2025 4:56 PM',
-      source: 'Cursor',
-      provider: 'Manual Entry',
-      usage: '94.2K tokens',
-      cost: '$6.21',
-      status: 'completed',
-    },
-    {
-      id: '4',
-      date: 'May 22, 2025 9:18 AM',
-      source: 'Cline',
-      provider: 'Manual Entry',
-      usage: '156.8K tokens',
-      cost: '$8.94',
-      status: 'completed',
-    },
-    {
-      id: '5',
-      date: 'May 21, 2025 3:42 PM',
-      source: 'VS Code Extension',
-      provider: 'Custom',
-      usage: '203.1K tokens',
-      cost: '$11.47',
-      status: 'completed',
-    },
-  ]);
+  const [imports, setImports] = useState<ImportedUsage[]>([]);
 
-  const handleCopilotImport = (data: Record<string, string | number>) => {
-    const newImport: ImportedUsage = {
-      id: String(imports.length + 1),
-      date: new Date().toLocaleString(),
-      source: 'GitHub Copilot',
-      provider: 'GitHub',
-      usage: `${data.credits} credits`,
-      cost: `$${(Number(data.credits) * 0.3).toFixed(2)}`,
+  // Convert DB usage object to table row
+  const convertUsage = (u: any): ImportedUsage => {
+    const credits = u.creditsUsed ?? 0;
+    const totalTokens = u.totalTokens ?? 0;
+    const costUsd = u.costUsd ?? 0;
+
+    const usageText = credits > 0 ? `${credits} credits` : totalTokens > 0 ? `${totalTokens} tokens` : '';
+    const costText = `$${Number(costUsd).toFixed(2)}`;
+
+    return {
+      id: u.id,
+      date: new Date(u.createdAt).toLocaleString(),
+      source: u.sourceName,
+      provider: u.provider,
+      usage: usageText,
+      cost: costText,
       status: 'completed',
     };
-    setImports([newImport, ...imports]);
   };
 
-  const handleOpenAIImport = (data: Record<string, string | number>) => {
-    const newImport: ImportedUsage = {
-      id: String(imports.length + 1),
-      date: new Date().toLocaleString(),
-      source: `${data.model} (OpenAI)`,
-      provider: 'OpenAI',
-      usage: `${data.tokens}K tokens`,
-      cost: `$${data.spend}`,
-      status: 'completed',
+  useEffect(() => {
+    let mounted = true;
+
+    async function load() {
+      try {
+        const res = await fetch('/api/usage/import');
+        if (!res.ok) return;
+        const json = await res.json();
+        const usage = json.usage ?? [];
+        const rows = usage.map(convertUsage);
+        if (mounted) setImports(rows);
+      } catch (e) {
+        // ignore for now
+      }
+    }
+
+    load();
+    return () => {
+      mounted = false;
     };
-    setImports([newImport, ...imports]);
+  }, []);
+
+  const handleCopilotImport = async (data: Record<string, string | number>) => {
+    try {
+      const credits = Number(data.credits) || 0;
+      const notes = (data.notes as string) || null;
+      const body = {
+        sourceName: 'GitHub Copilot',
+        provider: 'GitHub',
+        creditsUsed: credits,
+        costUsd: Number((credits * 0.01).toFixed(2)),
+        notes,
+      };
+
+      const res = await fetch('/api/usage/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) return;
+      const json = await res.json();
+      const u = json.usage;
+      if (u) setImports((prev) => [convertUsage(u), ...prev]);
+    } catch (e) {
+      // ignore
+    }
   };
 
-  const handleManualImport = (data: Record<string, string | number>) => {
-    const newImport: ImportedUsage = {
-      id: String(imports.length + 1),
-      date: new Date().toLocaleString(),
-      source: data.source as string,
-      provider: data.provider as string,
-      usage: `${data.tokens}K tokens`,
-      cost: `$${data.cost}`,
-      status: 'completed',
-    };
-    setImports([newImport, ...imports]);
+  const handleOpenAIImport = async (data: Record<string, string | number>) => {
+    try {
+      const spend = Number(data.spend) || 0;
+      const tokens = Number(data.tokens) || 0;
+      const model = (data.model as string) || 'OpenAI';
+      const period = (data.period as string) || null;
+
+      const body = {
+        sourceName: `${model} (OpenAI)`,
+        provider: 'OpenAI',
+        totalTokens: tokens,
+        costUsd: Number(spend),
+        notes: period,
+      };
+
+      const res = await fetch('/api/usage/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) return;
+      const json = await res.json();
+      const u = json.usage;
+      if (u) setImports((prev) => [convertUsage(u), ...prev]);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleManualImport = async (data: Record<string, string | number>) => {
+    try {
+      const source = (data.source as string) || 'Manual';
+      const provider = (data.provider as string) || 'Custom';
+      const cost = Number(data.cost) || 0;
+      const tokens = Number(data.tokens) || 0;
+      const notes = (data.notes as string) || null;
+
+      const body = {
+        sourceName: source,
+        provider,
+        totalTokens: tokens,
+        costUsd: cost,
+        notes,
+      };
+
+      const res = await fetch('/api/usage/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) return;
+      const json = await res.json();
+      const u = json.usage;
+      if (u) setImports((prev) => [convertUsage(u), ...prev]);
+    } catch (e) {
+      // ignore
+    }
   };
 
   const getStatusColor = (status: string) => {
