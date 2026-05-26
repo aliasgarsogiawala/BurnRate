@@ -1,11 +1,49 @@
-'use client';
-
 import StatCard from '@/components/StatCard';
 import UsageTable from '@/components/UsageTable';
 import BudgetAlerts from '@/components/BudgetAlerts';
 import PieChart from '@/components/PieChart';
 
-export default function DashboardPage() {
+interface StatsData {
+  totalCost: number;
+  totalTokens: number;
+  totalRequests: number;
+  totalCredits: number;
+  usageByProvider: Record<string, number>;
+}
+
+async function getStats(): Promise<StatsData> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const res = await fetch(`${baseUrl}/api/usage/stats`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      return {
+        totalCost: 0,
+        totalTokens: 0,
+        totalRequests: 0,
+        totalCredits: 0,
+        usageByProvider: {},
+      };
+    }
+    return res.json();
+  } catch (error) {
+    console.error('Failed to fetch stats:', error);
+    return {
+      totalCost: 0,
+      totalTokens: 0,
+      totalRequests: 0,
+      totalCredits: 0,
+      usageByProvider: {},
+    };
+  }
+}
+
+export default async function DashboardPage() {
+  const stats = await getStats();
+  const planValue = 10;
+  const multiplier = stats.totalCost > 0 ? (stats.totalCost / planValue).toFixed(2) : '0.00';
+
   return (
     <main className="flex-1 p-8 overflow-auto bg-white">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -24,26 +62,26 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div>
                   <p className="text-gray-600 text-sm mb-1">You paid</p>
-                  <p className="text-4xl font-semibold text-gray-900">$10</p>
+                  <p className="text-4xl font-semibold text-gray-900">${planValue}</p>
                 </div>
                 <div>
                   <p className="text-gray-600 text-sm mb-1">Used</p>
                   <p className="text-4xl font-semibold text-gray-900">
-                    $38.42<span className="text-lg text-gray-400"> worth of AI</span>
+                    ${stats.totalCost.toFixed(2)}<span className="text-lg text-gray-400"> worth of AI</span>
                   </p>
                 </div>
               </div>
               <p className="text-sm text-gray-600 mt-6">
-                That’s <span className="font-semibold text-gray-900">3.84x your plan value</span>.
+                That's <span className="font-semibold text-gray-900">{multiplier}x your plan value</span>.
               </p>
             </div>
             <div className="flex items-center justify-center md:justify-end">
               <div className="text-center md:text-right">
                 <div className="inline-flex items-center rounded-full bg-green-50 text-green-700 px-3 py-1 text-sm font-semibold mb-3">
-                  3.84x value received
+                  {multiplier}x value received
                 </div>
                 <p className="text-5xl font-bold text-gray-900">
-                  3.84<span className="text-2xl text-gray-400">x</span>
+                  {multiplier}<span className="text-2xl text-gray-400">x</span>
                 </p>
               </div>
             </div>
@@ -54,25 +92,25 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Cost"
-            value="$38.42"
+            value={`$${stats.totalCost.toFixed(2)}`}
             icon="💰"
             trend={{ value: 18, direction: 'up' }}
           />
           <StatCard
             title="Total Tokens"
-            value="1.42M"
+            value={stats.totalTokens >= 1000000 ? `${(stats.totalTokens / 1000000).toFixed(2)}M` : stats.totalTokens.toLocaleString()}
             icon="⚡"
             trend={{ value: 9, direction: 'up' }}
           />
           <StatCard
             title="Requests"
-            value="684"
+            value={stats.totalRequests.toString()}
             icon="📊"
             trend={{ value: 7, direction: 'down' }}
           />
           <StatCard
             title="Avg. Cost / 1K Tokens"
-            value="$0.027"
+            value={stats.totalTokens > 0 ? `$${((stats.totalCost / stats.totalTokens) * 1000).toFixed(3)}` : '$0.00'}
             icon="📈"
             trend={{ value: 6, direction: 'down' }}
           />
